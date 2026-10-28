@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Javascript 1</title>
+  <style>
+    .even { color: green; }
+    .odd  { color: darkblue; }
+    #list table { border-collapse: separate; border-spacing: 0 2px; }
+    #list td { padding: 1px 10px 1px 8px; }
+    #list td.num { min-width: 40px; }
+    #list td.type { min-width: 50px; }
+    #result { margin: 6px 0 4px 8px; }
+    #result span.value { text-decoration: underline; margin-left: 4px; }
+    #result div { font-weight: bold; }
+    #controls { margin-top: 8px; display: none; }
+  </style>
+</head>
+<body>
+  <h1>Javascript Web Output #1</h1>
+
+  <label for="numInput">Insert any Positive Numbers:</label>
+  <input type="text" id="numInput" autocomplete="off">
+  <br>
+  <button id="insertBtn">Insert</button>
+  <button id="clearEntryBtn">Clear Entry</button>
+
+  <br><br>
+
+  <fieldset>
+    <legend>Inserted Numbers</legend>
+    <div id="list"></div>
+    <div id="result"></div>
+  </fieldset>
+
+  <div id="controls">
+    <button id="clearItemsBtn">Clear Items</button>
+    <button id="totalBtn">Get Total</button>
+    <button id="highLowBtn">Identify Highest and Lowest Number</button>
+    <label for="sortSelect">Sort by:</label>
+    <select id="sortSelect">
+      <option value="">Please select</option>
+      <option value="asc">Ascending</option>
+      <option value="desc">Descending</option>
+    </select>
+  </div>
+
+  <script>
+    let numbers = [];    
+    let resultMode = null; 
+
+    const input        = document.getElementById("numInput");
+    const insertBtn    = document.getElementById("insertBtn");
+    const clearEntryBtn= document.getElementById("clearEntryBtn");
+    const listDiv      = document.getElementById("list");
+    const resultDiv    = document.getElementById("result");
+    const controls     = document.getElementById("controls");
+    const clearItemsBtn= document.getElementById("clearItemsBtn");
+    const totalBtn     = document.getElementById("totalBtn");
+    const highLowBtn   = document.getElementById("highLowBtn");
+    const sortSelect   = document.getElementById("sortSelect");
+
+    function parsePositive(value) {
+      const text = String(value).trim();
+      if (text === "" || !/^\d+$/.test(text)) return null;
+      const n = Number(text);
+      return n > 0 ? n : null;
+    }
+
+    function invalidAlert() {
+      alert("Please input a positive number");
+    }
+
+    function render() {
+      // List
+      if (numbers.length === 0) {
+        listDiv.innerHTML = "";
+      } else {
+        let html = "<table>";
+        numbers.forEach((n, i) => {
+          const isEven = n % 2 === 0;
+          html += `
+            <tr>
+              <td class="num">${n}</td>
+              <td class="type ${isEven ? "even" : "odd"}">${isEven ? "EVEN" : "ODD"}</td>
+              <td>
+                <button data-action="remove" data-index="${i}">Remove</button>
+                <button data-action="edit" data-index="${i}">Edit</button>
+              </td>
+            </tr>`;
+        });
+        html += "</table>";
+        listDiv.innerHTML = html;
+      }
+
+      controls.style.display = numbers.length ? "block" : "none";
+
+      if (numbers.length === 0 || resultMode === null) {
+        resultDiv.innerHTML = "";
+        if (numbers.length === 0) resultMode = null;
+      } else if (resultMode === "total") {
+        const total = numbers.reduce((sum, n) => sum + n, 0);
+        resultDiv.innerHTML = `<div>TOTAL <span class="value">${total}</span></div>`;
+      } else if (resultMode === "highlow") {
+        resultDiv.innerHTML = `
+          <div>HIGHEST <span class="value">${Math.max(...numbers)}</span></div>
+          <div>LOWEST <span class="value">${Math.min(...numbers)}</span></div>`;
+      }
+    }
+
+    function insertNumber() {
+      const n = parsePositive(input.value);
+      if (n === null) {
+        invalidAlert();
+        input.value = "";
+        input.focus();
+        return;
+      }
+      numbers.push(n);
+      input.value = "";
+      input.focus();
+      render();
+    }
+
+    function removeNumber(index) {
+      numbers.splice(index, 1);
+      render();
+    }
+
+    function editNumber(index) {
+      const value = prompt("Enter new number:", numbers[index]);
+      if (value === null) return; // Cancel pressed
+      const n = parsePositive(value);
+      if (n === null) {
+        invalidAlert();
+        return;
+      }
+      numbers[index] = n;
+      render();
+    }
+
+    function sortNumbers(order) {
+      if (order === "asc")  numbers.sort((a, b) => a - b);
+      if (order === "desc") numbers.sort((a, b) => b - a);
+      render();
+    }
+
+    insertBtn.addEventListener("click", insertNumber);
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") insertNumber();
+    });
+
+    clearEntryBtn.addEventListener("click", () => {
+      input.value = "";
+      input.focus();
+    });
+
+    listDiv.addEventListener("click", (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      const index = Number(btn.dataset.index);
+      if (btn.dataset.action === "remove") removeNumber(index);
+      if (btn.dataset.action === "edit")   editNumber(index);
+    });
+
+    clearItemsBtn.addEventListener("click", () => {
+      numbers = [];
+      resultMode = null;
+      sortSelect.value = "";
+      render();
+    });
+
+    totalBtn.addEventListener("click", () => {
+      resultMode = "total";
+      render();
+    });
+
+    highLowBtn.addEventListener("click", () => {
+      resultMode = "highlow";
+      render();
+    });
+
+    sortSelect.addEventListener("change", () => sortNumbers(sortSelect.value));
+
+    render();
+  </script>
+</body>
+</html>
